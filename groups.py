@@ -13,36 +13,43 @@ iii. for every x in S, there must be an inverse x^-1 in S such that
 
 Additionally, if * is commutative, then the group is called Abelian
 
+Throughout this module, the sets are always sets of strings, and the
+operations take a tuple of two strings and return a string.
 """
 
 from itertools import product
 
-class AS(object):
-    "Represents an algebraic structure group"
+class AlgStruct(object):
+    "Represents an algebraic structure consisting of a set and an operation"
     def __init__(self, gset, funmap, symbol='*'):
-        """gset = the set for the group 
-        funmap = map of tuples from
-         cartesian product of gset to members of gset,
+        """gset = the set for the algebraic structure
+ 
+        funmap = dict of tuples from cartesian product of gset to
+        members of gset
+
         symbol = a symbol representing the operation"""
+        
+        #We must check whether the set and operation satisfy some
+        #basic properties
+        
+        #Check whether the set is non-empty
+        if len(gset) == 0:
+            raise ValueError("Set must be non-empty")
+        #check whether the set and operation have closure 
+        if not is_closure(gset, lambda a,b:funmap[(a,b)]):
+            raise ValueError("Set and operation are not closed")
         self.S = gset
         self._funmap = funmap
         self.symbol = symbol
 
-    def __len__(self):
-        "Returns size of set S"
-        return len(self.S)
-
     def __repr__(self):
-        "Returns a representation of the Group"
-        return "Group{" + repr(self.S) + "," + self.symbol + "}"
+        "Returns a representation of the Algebraic Structure"
+        return "{" + repr(self.S) + ", " + self.symbol + "}"
 
     def op(self,x,y):
-        "Actually applies the function to the inputs"
-        try:
-            retval = self._funmap[(x,y)]
-        except:
-            raise ValueError('Operation not defined for values')
-        return retval
+        "Carries out the operation by returning the inputs"
+        return self._funmap[(x,y)]
+
 
 def define_funmap(gset):
     "Gets user input to define a function map from a given set of symbols"
@@ -61,35 +68,60 @@ def define_elements():
         else: 
             gset.add(inn)
     return gset
+
+def make_AlgStruct():
+    "Makes an algebraic structure using user input"
+    gset = define_elements()
+    funmap = define_funmap(gset)
+    g = AlgStruct(gset, funmap)
+    print g
+    print funtable(g)
+    return g
+
+def is_closure(gset, op):
+    """Tests whether a set is closed under an operation"""
+    for a,b in product(gset,gset):
+        try:
+            if op(a, b) not in gset:
+                raise ValueError
+        except:
+            return False
+    return True
     
-def test_assoc(G,p=False):
-    """Tests whether a potential group is associative. Optionally
+def is_associative((gset,f),p=False):
+    """Tests whether an algebraic structure is associative. Optionally
     prints the first non-associative triple if p is True"""
-    f = G.op # for clarity
-    for x,y,z in product(G.S, G.S, G.S):#triple cartesian product
+
+    for x,y,z in product(gset, gset, gset):
         if f(f(x,y), z) != f(x, f(y,z)):
             break
-    else:# if break is not encountered i.e. always associative
+    else:
         return True
     if p:
         print (x, (y, z)), "!=", ((x, y), z)
     return False #some triple caused a break
 
-def funtable(grp):
-    "Print out a full Cayley table for a group's operation"
-    print grp.symbol, "\t",
-    for i in grp.S:
-        print i, "\t",
-    print ""
-    for i in grp.S:
-        print i, "\t",
-        for j in grp.S:
-            print grp.op(i,j), "\t",
-        print ""
+def funtable(gset, op, symbol="*"):
+    """Returns a string representing a full Cayley table for a
+    function over a set.  Optional argument symbol is the symbol used
+    to represent the function. This is not done particularly
+    efficiently, but if your table is huge enough for this to matter,
+    the rest of this module will be fairly useless to you."""
+
+    retval = symbol + "\t"
+    for i in gset:
+        retval += i + "\t"
+    retval += "\n"
+    for i in gset:
+        retval += i + "\t"
+        for j in gset:
+            retval += op(i,j) + "\t"
+        retval += "\n"
+    return retval + "\n"
 
 def fun_generator(gset):
-    """Generates funmaps of successive binary functions from a given
-    set of input symbols.
+    """Generates successive binary functions from a given set of input
+    symbols.
 
     Warning: The total number of binary functions generated is
     astronomical.  If s is the size of the set, then there are
@@ -103,18 +135,34 @@ def fun_generator(gset):
         funmap = {}
         for i,p in enumerate(product(gset, gset)):
             funmap[p] = f[i]
-        yield funmap
-           
-def 
+        yield (lambda x,y: funmap[(x,y)])
 
-def make_group():
-    "Makes a group using user input"
-    gset = define_elements()
-    funmap = define_funmap(gset)
-    g = Group(gset, funmap)
-    print g
-    print funtable(g)
-    return g
-    
+def systematic_assoc_test(gset):
+    """Tests each possible function over a set for associativity,
+    returns a list of the numbers of the positive functions (from
+    which the functions can be regenerated given the set). This test
+    is sufficiently general that it need only be executed once ever
+    for a given set size, since the results extend to all sets the
+    same size as the input set. Unfortunately, while this is true, it
+    is not advised that anyone use this function on a set larger than
+    4 elements. (See the docstring for fun_generator)
 
+    When attempting to run this on my laptop, a set with 3 elements
+    took 301 milliseconds to execute. This means a set with 4 elements
+    should run in about 18 hours and a set with 5 elements should run in 
+    about 144,516 years"""
     
+    fun_iter = fun_generator(gset)
+    positives = []
+    for i, fun in enumerate(fun_iter):
+        if is_associative((gset,fun)):
+            positives.append(i)
+    return positives
+
+def main():
+    import timeit
+    timeit.Timer('systematic_assoc_test(set([1,2,3]))',
+                 'gc.enable()').timeit()
+
+if __name__ == '__main__':
+    main()
