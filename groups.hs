@@ -16,10 +16,10 @@ data Magma a = Semigroup (Groupoid a)
              | AbelianGroup (Groupoid a)
 
 instance Show (Magma a) where
-    show (Semigroup (s,_)) = "Semigroup of order "++ (show (length s))
-    show (Monoid (s,_)) = "Monoid of order "++ (show (length s))
-    show (Group (s,_)) = "Group of order "++ (show (length s))
-    show (AbelianGroup (s,_)) = "Abelian Group of order "++ (show (length s))
+    show (Semigroup g) = "Semigroup of order " ++ (show $ order g)
+    show (Monoid g) = "Monoid of order " ++ (show $ order g)
+    show (Group g) = "Group of order " ++ (show $ order g)
+    show (AbelianGroup g) = "Abelian Group of order " ++ (show $ order g)
                
 order :: Groupoid a -> Int
 order (s, _) = length s
