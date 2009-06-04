@@ -91,4 +91,12 @@ classify g
 createZMod :: Int -> Groupoid Int
 createZMod n
     | n <= 0 = ([0], (\x y -> x))
-    | otherwise = ([0..(n-1)], (\x y -> mod (x + y) n))
+    | otherwise = ([0..(n-1)], (\x y -> mod (x + y) 
+
+funsWithProp :: [a] -> (Groupoid a -> Bool) -> [Int]
+funsWithProp s f = 
+    let order = length a
+        funenum = []
+    in
+      
+
