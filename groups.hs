@@ -1,5 +1,3 @@
-
-{-# LANGUAGE TupleSections #-}
 module Groups where
 
 import Data.List (find)
@@ -14,33 +12,48 @@ data Magma a = Semigroup (Groupoid a)
              | AbelianGroup (Groupoid a)
              | Magma (Groupoid a)
 
-data Property = Unital | LeftSemiMedial | RightSemiMedial | SemiMedial 
-              | Medial | LeftDistributive | RightDistributive | AutoDistributive
-              | Idempotent | Commutative | Unipotent | ZeroPotent | Alternative
-              | PowerAssociative | LeftCancellative | RightCancellative 
-              | Cancellative | HasLeftZeroes | HasRightZeroes | Null
+data Property = Associative | Unital | Idempotent | Commutative | Unipotent 
+              | ZeroPotent | Alternative | PowerAssociative | Mediality Mediality 
+              | Distributivity Distributivity | Cancellativity Cancellativity
+              | Nullity Nullity
+
+data Mediality = LeftSemiMedial | RightSemiMedial | SemiMedial | Medial 
+               | NonMedial
+
+data Distributivity = LeftDistributive | RightDistributive | AutoDistributive 
+                    | NonDistributive
+
+data Cancellativity = LeftCancellative | RightCancellative | Cancellative 
+                    | NonCancellative
+
+data Nullity = HasLeftZeroes | HasRightZeroes | Null | NonNull
 
 instance Show Property where
-    show Unital = "unital"
-    show LeftSemiMedial = "left-semimedial"
-    show RightSemiMedial = "right-semimedial"
-    show SemiMedial = "semimedial"
-    show Medial = "medial"
-    show LeftDistributive = "left-distributive"
-    show RightDistributive = "right-distributive"
-    show AutoDistributive = "autodistributive"
-    show Idempotent = "idempotent"
+    show Associative = "associative"
     show Commutative = "commutative"
+    show Unital = "unital"
+    show (Mediality LeftSemiMedial) = "left-semimedial"
+    show (Mediality RightSemiMedial) = "right-semimedial"
+    show (Mediality SemiMedial) = "semimedial"
+    show (Mediality Medial) = "medial"
+    show (Mediality NonMedial) = ""
+    show (Distributivity LeftDistributive) = "left-distributive"
+    show (Distributivity RightDistributive) = "right-distributive"
+    show (Distributivity AutoDistributive) = "autodistributive"
+    show (Distributivity NonDistributive) = ""
+    show Idempotent = "idempotent"
     show Unipotent = "unipotent"
     show ZeroPotent = "zeropotent"
     show Alternative = "alternative"
     show PowerAssociative = "power-associative"
-    show LeftCancellative = "left-cancellative"
-    show RightCancellative = "right-cancellative"
-    show Cancellative = "cancellative"
-    show HasLeftZeroes = "has left zeroes"
-    show HasRightZeroes = "has right zeroes"
-    show Null = "null"
+    show (Cancellativity LeftCancellative) = "left-cancellative"
+    show (Cancellativity RightCancellative) = "right-cancellative"
+    show (Cancellativity Cancellative) = "cancellative"
+    show (Cancellativity NonCancellative) = ""
+    show (Nullity HasLeftZeroes) = "has left zeroes"
+    show (Nullity HasRightZeroes) = "has right zeroes"
+    show (Nullity Null) = "null"
+    show (Nullity NonNull) = ""
 
 instance Show (Magma a) where
     show (Semigroup g) = "Semigroup of order " ++ show (order g)
@@ -85,13 +98,13 @@ isRightSemiMedial :: (Eq a) => Groupoid a -> Bool
 isRightSemiMedial (s,(*)) = satisfy3 s (\(x,y,z) -> (y * z) * (x * x) ==
                                                     (y * x) * (z * x))
 
-mediality :: (Eq a) => Groupoid a -> Maybe Property
+mediality :: (Eq a) => Groupoid a -> Mediality
 mediality g 
-    | isMedial g = Just Medial
-    | isSemiMedial g = Just SemiMedial
-    | isLeftSemiMedial g = Just LeftSemiMedial
-    | isRightSemiMedial g = Just RightSemiMedial
-    | otherwise  = Nothing
+    | isMedial g = Medial
+    | isSemiMedial g = SemiMedial
+    | isLeftSemiMedial g = LeftSemiMedial
+    | isRightSemiMedial g = RightSemiMedial
+    | otherwise  = NonMedial
 
 isLeftDistributive :: (Eq a) => Groupoid a -> Bool
 isLeftDistributive (s,(*)) = satisfy3 s (\(x,y,z) -> x * (y * z) == 
@@ -104,12 +117,12 @@ isRightDistributive (s,(*)) = satisfy3 s (\(x,y,z) -> (y * z) * x ==
 isAutoDistributive :: (Eq a) => Groupoid a -> Bool
 isAutoDistributive = isLeftDistributive &&&> isRightDistributive
 
-distributivity :: (Eq a) => Groupoid a -> Maybe Property
+distributivity :: (Eq a) => Groupoid a -> Distributivity
 distributivity g
-    | isAutoDistributive g = Just AutoDistributive
-    | isLeftDistributive g = Just LeftDistributive
-    | isRightDistributive g = Just RightDistributive
-    | otherwise = Nothing
+    | isAutoDistributive g = AutoDistributive
+    | isLeftDistributive g = LeftDistributive
+    | isRightDistributive g = RightDistributive
+    | otherwise = NonDistributive
 
 isUnipotent :: (Eq a) => Groupoid a -> Bool
 isUnipotent (s,(*)) = satisfy2 s (\(x,y) -> (x*x) == (y*y))
@@ -152,18 +165,28 @@ isRightCancellative (s,(*)) = satisfy3 s (\(x,y,z) -> ((y*x) == (z*x)) ==> (y ==
 isCancellative :: (Eq a) => Groupoid a -> Bool
 isCancellative = isLeftCancellative &&&> isRightCancellative
 
-cancellativity :: (Eq a) => Groupoid a -> Maybe Property
+cancellativity :: (Eq a) => Groupoid a -> Cancellativity
 cancellativity g
-    | isCancellative g = Just Cancellative
-    | isRightCancellative g = Just RightCancellative
-    | isLeftCancellative g = Just LeftCancellative
-    | otherwise = Nothing
+    | isCancellative g = Cancellative
+    | isRightCancellative g = RightCancellative
+    | isLeftCancellative g = LeftCancellative
+    | otherwise = NonCancellative
 
 hasRightZeroes :: (Eq a) => Groupoid a -> Bool
 hasRightZeroes (s,(*)) = satisfy2 s (\(x,y) -> y == (x*y))
 
 hasLeftZeroes :: (Eq a) => Groupoid a -> Bool
 hasLeftZeroes (s,(*)) = satisfy2 s (\(x,y) -> x == (x*y))
+
+isNull :: (Eq a) => Groupoid a -> Bool
+isNull = hasLeftZeroes &&&> hasRightZeroes
+
+nullity :: (Eq a) => Groupoid a -> Nullity
+nullity g
+    | hasLeftZeroes g = HasLeftZeroes
+    | hasRightZeroes g = HasRightZeroes
+    | isNull g = Null
+    | otherwise = NonNull
 
 identityOf :: (Eq a) => Groupoid a -> Maybe a 
 identityOf (s,(*)) = find (\e -> all (\a -> (e * a == a) && 
@@ -193,19 +216,13 @@ classify g
     | isSemigroup g    = Semigroup g
     | otherwise        = Magma g
 
--- Some ways of creating groupoids
+--getProperties :: (Eq a) => Groupoid a -> [Property]
+
+-- Some ways of creating different magmas
 
 createZMod :: Int -> Groupoid Int
 createZMod 0 = ([0], \x _ -> x)
 createZMod n = ([0..(n-1)], \x y -> mod (x + y) n)
-      
-{-                                 
-funsWithProp :: [a] -> (Groupoid a -> Bool) -> [Int]
-funsWithProp s f = 
-    let order = length a
-        funenum = []
-    in
--}    
 
 -- Helper stuffs
 allDoubles :: [a] -> [(a,a)]
@@ -240,3 +257,4 @@ bowleg combine opA opB a = opA a `combine` opB a
 -- Hey it turns out we can chain these, that's pretty sweet
 (&&&>) :: (a -> Bool) -> (a -> Bool) -> a -> Bool
 (&&&>) = bowleg (&&)
+
