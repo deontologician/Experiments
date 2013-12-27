@@ -1,4 +1,11 @@
 #!/usr/bin/env python2
+'''
+This script outputs a random selection from the tables of the game Fantasy
+Genesis. You can find the book here:
+
+http://www.amazon.com/Fantasy-Genesis-Creativity-Game-Artists/dp/1600613373
+
+'''
 
 from random import choice
 
